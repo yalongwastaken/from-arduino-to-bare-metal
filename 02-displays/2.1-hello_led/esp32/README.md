@@ -1,11 +1,10 @@
-# 2.1 — Hello, LED! — ESP-IDF
+# 2.1 — Hello, LED!
 
 Blink an LED on GPIO26 using ESP-IDF v5.x.
 
 ## Build & Flash
 
 ```bash
-cd esp-idf
 idf.py build
 idf.py -p /dev/ttyUSB0 flash monitor
 ```

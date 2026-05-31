@@ -13,7 +13,7 @@ SunFounder tutorial: [2.1 Hello, LED!](https://docs.sunfounder.com/projects/esp3
 
 ```
 2.1-hello_led/
-├── esp-idf/
+├── esp32/
 │   ├── main/
 │   │   └── main.c
 │   ├── CMakeLists.txt

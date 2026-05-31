@@ -1,4 +1,4 @@
-# ESP-IDF Setup
+# ESP32 Setup (ESP-IDF)
 
 This guide gets you from zero to a working ESP-IDF environment on your machine. Complete this before attempting any lesson in this repo.
 
@@ -68,7 +68,7 @@ Each lesson in this repo follows the standard ESP-IDF project layout:
 
 ```
 2.1-hello_led/
-└── esp-idf/
+└── esp32/
     ├── CMakeLists.txt          — top-level build file, registers the project
     ├── main/
     │   ├── CMakeLists.txt      — registers main as a component, lists source files
@@ -110,7 +110,7 @@ Optional. Each subdirectory is an independent component with its own `CMakeLists
 
 ## 4. Build, Flash, and Monitor
 
-From inside any lesson's `esp-idf/` directory:
+From inside any lesson's `esp32/` directory:
 
 ```bash
 # build
