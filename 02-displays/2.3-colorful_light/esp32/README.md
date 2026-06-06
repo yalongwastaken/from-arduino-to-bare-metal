@@ -1,4 +1,4 @@
-# 2.3 — Colorful Light — ESP-IDF
+# 2.3 — Colorful Light — ESP32
 
 Control an RGB LED using three independent LEDC channels on GPIO27, GPIO26, and GPIO25.
 
@@ -6,8 +6,10 @@ Control an RGB LED using three independent LEDC channels on GPIO27, GPIO26, and 
 
 ```bash
 idf.py build
-idf.py -p /dev/tty.usbserial-* flash monitor
+idf.py -p <PORT> flash monitor
 ```
+
+**Port by OS:** `/dev/ttyUSB0` (Linux) · `/dev/cu.usbserial-*` (macOS) · `COMx` (Windows)
 
 ## Key Concepts
 

@@ -1,4 +1,4 @@
-# 2.2 — Fading — ESP-IDF
+# 2.2 — Fading — ESP32
 
 Fade an LED in and out on GPIO26 using the LEDC peripheral.
 
@@ -6,8 +6,10 @@ Fade an LED in and out on GPIO26 using the LEDC peripheral.
 
 ```bash
 idf.py build
-idf.py -p /dev/tty.usbserial-* flash monitor
+idf.py -p <PORT> flash monitor
 ```
+
+**Port by OS:** `/dev/ttyUSB0` (Linux) · `/dev/cu.usbserial-*` (macOS) · `COMx` (Windows)
 
 ## Key Concepts
 

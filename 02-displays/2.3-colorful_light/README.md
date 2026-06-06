@@ -15,9 +15,10 @@ SunFounder tutorial: [2.3 Colorful Light](https://docs.sunfounder.com/projects/e
 
 ```
 2.3-colorful_light/
-├── esp-idf/
+├── esp32/
 │   ├── main/
-│   │   └── main.c
+│   │   ├── main.c
+│   │   └── CMakeLists.txt
 │   ├── CMakeLists.txt
 │   └── README.md
 └── README.md

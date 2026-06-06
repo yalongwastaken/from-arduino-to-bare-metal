@@ -15,7 +15,8 @@ SunFounder tutorial: [2.1 Hello, LED!](https://docs.sunfounder.com/projects/esp3
 2.1-hello_led/
 ├── esp32/
 │   ├── main/
-│   │   └── main.c
+│   │   ├── main.c
+│   │   └── CMakeLists.txt
 │   ├── CMakeLists.txt
 │   └── README.md
 └── README.md

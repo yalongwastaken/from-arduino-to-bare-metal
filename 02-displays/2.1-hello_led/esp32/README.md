@@ -1,4 +1,4 @@
-# 2.1 — Hello, LED!
+# 2.1 — Hello, LED! - ESP32
 
 Blink an LED on GPIO26 using ESP-IDF v5.x.
 
@@ -6,10 +6,10 @@ Blink an LED on GPIO26 using ESP-IDF v5.x.
 
 ```bash
 idf.py build
-idf.py -p /dev/ttyUSB0 flash monitor
+idf.py -p <PORT> flash monitor
 ```
 
-Replace `/dev/ttyUSB0` with your port (`/dev/tty.usbserial-*` on macOS, `COMx` on Windows).
+**Port by OS:** `/dev/ttyUSB0` (Linux) · `/dev/cu.usbserial-*` (macOS) · `COMx` (Windows)
 
 ## Key Concepts
 

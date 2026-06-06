@@ -17,7 +17,8 @@ Same circuit as 2.1 — no changes needed.
 2.2-fading/
 ├── esp-idf/
 │   ├── main/
-│   │   └── main.c
+│   │   ├── main.c
+│   │   └── CMakeLists.txt
 │   ├── CMakeLists.txt
 │   └── README.md
 └── README.md

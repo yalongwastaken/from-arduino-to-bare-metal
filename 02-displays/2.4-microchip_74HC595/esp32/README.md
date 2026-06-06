@@ -20,4 +20,4 @@ Arduino's `shiftOut()` is a convenience wrapper — it loops 8 times, setting DS
 The STcp pin controls when the shift register's internal state is transferred to the output pins. Pull it low before sending, pulse it high after — this prevents the outputs from flickering mid-transmission as bits are clocked in.
 
 ### Data array
-The tutorial uses an array of 8-bit patterns to sequence the LEDs. Each value is sent as a full byte to the shift register, lighting the corresponding combination of Q0–Q7 outputs.ß
+The tutorial uses an array of 8-bit patterns to sequence the LEDs. Each value is sent as a full byte to the shift register, lighting the corresponding combination of Q0–Q7 outputs.
