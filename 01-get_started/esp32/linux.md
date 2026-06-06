@@ -1,42 +1,49 @@
-# ESP32 Setup (ESP-IDF)
+# ESP32 Setup — Linux / Ubuntu 26.04 (ESP-IDF)
 
-This guide gets you from zero to a working ESP-IDF environment on your machine. Complete this before attempting any lesson in this repo.
+This guide gets you from zero to a working ESP-IDF environment on Ubuntu 26.04. Complete this before attempting any ESP32 lesson in this repo.
 
 ---
 
-## 1. Install ESP-IDF v5.x
+## 1. Install ESP-IDF v5.5+
 
 ESP-IDF is Espressif's native framework for ESP32. It includes the toolchain, build system, FreeRTOS, and all peripheral drivers. It replaces the Arduino core entirely.
 
-### macOS / Linux
+> **Ubuntu 26.04 note:** the system Python is **3.14**. ESP-IDF **v5.5+** supports 3.14, so the steps below work as-is — use v5.5, not an older tag. If `install.sh` ever fails building Python wheels (some third-party wheels lag a brand-new interpreter), fall back to Espressif's **ESP-IDF Installation Manager (EIM)** or the **ESP-IDF Docker image**, both of which manage their own Python. Don't repoint the `/usr/bin/python3` symlink to an older version — Ubuntu's system tooling depends on 3.14.
 
 ```bash
-# install prerequisites (macOS)
-brew install cmake ninja dfu-util python3
+# install prerequisites
+sudo apt update
+sudo apt install -y git wget flex bison gperf python3 python3-pip \
+    python3-venv cmake ninja-build ccache libffi-dev libssl-dev \
+    dfu-util libusb-1.0-0
 
 # clone ESP-IDF
 mkdir -p ~/esp
 cd ~/esp
 git clone --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
-git checkout v5.3  # or latest stable v5.x tag
+git checkout v5.5            # v5.5+ required for Python 3.14 (Ubuntu 26.04 default)
+git submodule update --init --recursive
 
 # run the install script
 ./install.sh esp32
-
-# add to your shell config (~/.zshrc or ~/.bashrc)
-. ~/esp/esp-idf/export.sh
 ```
 
-### Windows
+### Make the environment persistent
 
-Use the [ESP-IDF Windows Installer](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/windows-setup.html) — it handles Python, Git, CMake, and the toolchain automatically.
+`export.sh` only configures the current shell session. Add an alias to `~/.bashrc` so you can load it on demand instead of retyping the path:
+
+```bash
+echo 'alias esp-idf=". $HOME/esp/esp-idf/export.sh"' >> ~/.bashrc
+source ~/.bashrc
+esp-idf
+```
 
 ### Verify
 
 ```bash
 idf.py --version
-# ESP-IDF v5.x.x
+# ESP-IDF v5.5.x
 ```
 
 ---
@@ -48,9 +55,9 @@ Espressif provides an official ESP-IDF extension for VS Code that wraps `idf.py`
 ### Install
 
 1. Open VS Code
-2. Go to Extensions (`Cmd+Shift+X` / `Ctrl+Shift+X`)
+2. Go to Extensions (`Ctrl+Shift+X`)
 3. Search **ESP-IDF** and install the extension by Espressif Systems
-4. Open the command palette (`Cmd+Shift+P`) → **ESP-IDF: Configure ESP-IDF Extension**
+4. Open the command palette (`Ctrl+Shift+P`) → **ESP-IDF: Configure ESP-IDF Extension**
 5. Choose **Use existing installation** and point it at your `~/esp/esp-idf` directory
 
 ### What it gives you
@@ -110,26 +117,23 @@ Optional. Each subdirectory is an independent component with its own `CMakeLists
 
 ## 4. Build, Flash, and Monitor
 
-From inside any lesson's `esp32/` directory:
+From inside any lesson's `esp32/` directory (run `get_idf` first if the environment isn't loaded in this shell):
 
 ```bash
 # build
 idf.py build
 
 # flash
-idf.py -p /dev/tty.usbserial-* flash
+idf.py -p /dev/ttyUSB0 flash
 
 # monitor serial output
-idf.py -p /dev/tty.usbserial-* monitor
+idf.py -p /dev/ttyUSB0 monitor
 
 # all at once
-idf.py -p /dev/tty.usbserial-* flash monitor
+idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
-**Port names by OS:**
-- macOS: `/dev/tty.usbserial-*` or `/dev/tty.SLAB_USBtoUART`
-- Linux: `/dev/ttyUSB0`
-- Windows: `COM3`, `COM4`, etc.
+**Linux serial port:** usually `/dev/ttyUSB0` for USB-to-UART bridge chips (CP2102/CH340, common on SunFounder boards), or `/dev/ttyACM0` for boards with native USB. List candidates with `ls /dev/ttyUSB* /dev/ttyACM*`.
 
 Exit the monitor with `Ctrl+]`.
 
@@ -138,19 +142,22 @@ Exit the monitor with `Ctrl+]`.
 ## 5. Common Pitfalls
 
 **`idf.py` not found**
-The ESP-IDF environment wasn't sourced. Run `. ~/esp/esp-idf/export.sh` or add it to your shell config.
+The ESP-IDF environment wasn't sourced. Run `get_idf` (or `. ~/esp/esp-idf/export.sh`) in this shell.
 
-**Permission denied on port (Linux)**
+**Permission denied on the serial port**
+Add yourself to the `dialout` group, then log out and back in:
 ```bash
-sudo usermod -a -G dialout $USER
-# log out and back in
+sudo usermod -aG dialout $USER
 ```
+
+**`install.sh` fails building a Python wheel**
+A 3.14-vs-wheel lag (see the Ubuntu 26.04 note above). Use the ESP-IDF Installation Manager (EIM) or the Docker image, which bundle their own Python.
 
 **`sdkconfig` conflicts after switching branches**
 Delete `sdkconfig` and `build/` and rebuild from scratch.
 
 **IntelliSense not resolving ESP-IDF headers in VS Code**
-Run **ESP-IDF: Configure ESP-IDF Extension** again and make sure the IDF path is correct. The extension generates `c_cpp_properties.json` automatically.
+Run **ESP-IDF: Configure ESP-IDF Extension** again and confirm the IDF path is correct. The extension regenerates `c_cpp_properties.json` automatically.
 
 **Flash fails with "A fatal error occurred: Failed to connect"**
 Hold the `BOOT` button on the ESP32 while flashing, release after the upload starts.

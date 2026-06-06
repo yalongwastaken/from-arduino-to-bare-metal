@@ -20,6 +20,10 @@ Lessons mirror the SunFounder tutorial structure exactly:
 
 ```
 from-arduino-to-bare-metal/
+├── 01-get_started/
+│   ├── esp32/             — ESP-IDF v5.x setup (macOS / Windows / Linux)
+│   ├── stm32/             — STM32CubeIDE setup (macOS / Windows / Linux)
+│   └── rpi5/              — Raspberry Pi OS + libgpiod setup (+ SSH from any host)
 ├── 02-displays/
 │   ├── 2.1-hello_led/
 │   │   ├── esp32/         — ESP-IDF v5.x implementation
@@ -39,17 +43,13 @@ ESP32 translations come first. STM32 and RPi5 folders are added to each lesson a
 
 ## Prerequisites
 
-### ESP32
-- ESP-IDF v5.x — [installation guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/)
-- ESP32 board (SunFounder ESP32 Starter Kit or equivalent)
+Environment setup and installation for all three platforms — covering **macOS** (Apple Silicon), **Windows 11**, and **Ubuntu 26.04 Linux** hosts — lives in [`01-get_started/`](01-get_started/):
 
-### STM32 *(coming later)*
-- STM32CubeIDE — [download](https://www.st.com/en/development-tools/stm32cubeide.html)
-- Nucleo-F446RE
+- [**ESP32** — ESP-IDF v5.x](01-get_started/esp32/)
+- [**STM32** — STM32CubeIDE (Nucleo-F446RE)](01-get_started/stm32/)
+- [**RPi5** — Raspberry Pi OS + libgpiod](01-get_started/rpi5/)
 
-### RPi5 *(coming later)*
-- Raspberry Pi 5 running Raspberry Pi OS
-- libgpiod — [docs](https://libgpiod.readthedocs.io/en/master/)
+You'll also need the matching hardware: an ESP32 board (SunFounder ESP32 Starter Kit or equivalent), a Nucleo-F446RE, and/or a Raspberry Pi 5.
 
 ## Status
 
