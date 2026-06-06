@@ -1,18 +1,20 @@
-# RPi5 Setup (libgpiod)
+# RPi5 Setup — macOS host (libgpiod)
 
-This guide gets you from zero to a working embedded Linux development environment on Raspberry Pi 5. Complete this before attempting any RPi5 lesson in this repo.
+This guide gets you from zero to a working embedded Linux development environment on Raspberry Pi 5, working from a macOS host. Complete this before attempting any RPi5 lesson in this repo.
+
+> The **RPi5 board** runs **Raspberry Pi OS** (a Linux shell), so the `apt`/`gcc`/`gpiod` commands below all run *on the Pi*. Your **Mac** only needs SSH access — which is built in.
 
 ---
 
 ## 1. Install Raspberry Pi OS
 
-Flash Raspberry Pi OS (64-bit, Lite or Desktop) to a microSD card using [Raspberry Pi Imager](https://www.raspberrypi.com/software/). Enable SSH and set your hostname/credentials in the imager before flashing.
+Flash Raspberry Pi OS (64-bit, Lite or Desktop) to a microSD card using [Raspberry Pi Imager](https://www.raspberrypi.com/software/) (native Apple Silicon build available). Enable SSH and set your hostname/credentials in the imager's **OS Customisation** (gear icon) before flashing.
 
-Verify once booted:
+Verify once booted (over SSH or on the Pi directly):
 
 ```bash
 uname -a
-# Linux raspberrypi 6.x.x ...
+# Linux raspberrypi 6.x.x ... aarch64
 ```
 
 ---
@@ -26,23 +28,27 @@ sudo apt update
 sudo apt install -y libgpiod-dev gpiod
 ```
 
+> Bookworm ships **libgpiod v2**, whose API differs substantially from the older v1 (builder-pattern line requests instead of `gpiod_line_request_*`). Lessons in this repo target the **v2 API** — if you pattern-match against an old v1 tutorial, the calls won't line up.
+
 Verify:
 
 ```bash
 gpiodetect
-# lists all GPIO chips on the system
+# lists all GPIO chips; gpiochip4 is the RP1 chip driving the 40-pin header
+gpiodetect --version
+# gpiodetect v2.x
 ```
 
 ---
 
 ## 3. VS Code Setup (Remote SSH)
 
-The recommended workflow is to write code on your development machine and build/run on the Pi over SSH.
+The recommended workflow is to edit on your Mac and build/run on the Pi over SSH. `raspberrypi.local` resolves via Bonjour natively on macOS.
 
 ### Install
 
 1. Open VS Code
-2. Go to Extensions (`Cmd+Shift+X` / `Ctrl+Shift+X`)
+2. Go to Extensions (`Cmd+Shift+X`)
 3. Search **Remote - SSH** and install the extension by Microsoft
 4. Open the command palette (`Cmd+Shift+P`) → **Remote-SSH: Connect to Host**
 5. Enter `user@raspberrypi.local`
@@ -51,7 +57,7 @@ You now have a full VS Code environment running on the Pi.
 
 ### What it gives you
 
-- Edit files directly on the Pi from your development machine
+- Edit files directly on the Pi from your Mac
 - Integrated terminal running on the Pi
 - IntelliSense for C with libgpiod headers
 
@@ -92,7 +98,7 @@ clean:
 
 ## 5. Build and Run
 
-From inside any lesson's `rpi5/` directory on the Pi:
+From inside any lesson's `rpi5/` directory **on the Pi** (via SSH or the VS Code remote terminal):
 
 ```bash
 # build
@@ -116,8 +122,8 @@ sudo usermod -aG gpio $USER
 
 ## 6. Common Pitfalls
 
-**`libgpiod/gpiod.h` not found**
-Run `sudo apt install libgpiod-dev` — the `-dev` package provides the headers.
+**`gpiod.h` not found**
+Run `sudo apt install libgpiod-dev` — the `-dev` package provides the header (`#include <gpiod.h>`, installed to `/usr/include/gpiod.h`).
 
 **Permission denied on `/dev/gpiochip*`**
 Either run with `sudo` or add your user to the `gpio` group (see above).
@@ -126,8 +132,8 @@ Either run with `sudo` or add your user to the `gpio` group (see above).
 The Pi isn't running a recent enough kernel. Update with `sudo apt full-upgrade` and reboot.
 
 **Finding the right GPIO chip and line**
-Use `gpioinfo` to list all chips and their lines. On RPi5, GPIO pins are typically on `gpiochip4`.
+Use `gpioinfo` to list all chips and their lines. On RPi5, the 40-pin header is on `gpiochip4` (the RP1 chip).
 
 ```bash
-gpioinfo
+gpioinfo gpiochip4
 ```
