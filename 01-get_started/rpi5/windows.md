@@ -1,16 +1,18 @@
-# RPi5 Setup — Windows 11 host (libgpiod)
+# RPi5 Setup — Windows 11 host (libgpiod, cross-compile via WSL2)
 
-This guide gets you from zero to a working embedded Linux development environment on Raspberry Pi 5, working from a Windows 11 host. Complete this before attempting any RPi5 lesson in this repo.
+This guide gets you from zero to a working cross-compilation workflow for Raspberry Pi 5, building inside WSL2 on Windows 11 and deploying to the Pi over SSH. Complete this before attempting any RPi5 lesson in this repo.
 
-> The **RPi5 board** runs **Raspberry Pi OS** (a Linux shell), so the `apt`/`gcc`/`gpiod` commands below all run *on the Pi*, not in Windows. Your **Windows 11 machine** only needs SSH access — built into Windows 11.
+> **Workflow:** edit on Windows → build inside WSL2 → `scp` binary to Pi → run on Pi. The Pi never needs a compiler installed.
+
+> **Why WSL2?** Native Windows cross-compilation toolchains for aarch64 Linux exist but are fragile and non-standard. WSL2 gives you a full Ubuntu environment on Windows — you get the same clean `apt install` toolchain path used in the Linux guide, and it's how Windows-based embedded developers actually work in industry.
 
 ---
 
-## 1. Install Raspberry Pi OS
+## 1. Flash Raspberry Pi OS (on the Pi)
 
 Flash Raspberry Pi OS (64-bit, Lite or Desktop) to a microSD card using [Raspberry Pi Imager](https://www.raspberrypi.com/software/). Enable SSH and set your hostname/credentials in the imager's **OS Customisation** (gear icon) before flashing.
 
-Verify once booted (over SSH or on the Pi directly):
+Verify once booted:
 
 ```bash
 uname -a
@@ -19,9 +21,9 @@ uname -a
 
 ---
 
-## 2. Install libgpiod
+## 2. Install libgpiod on the Pi
 
-libgpiod is the modern, kernel-supported GPIO library for Linux. It replaces the deprecated sysfs interface and is what production embedded Linux projects use. Run these **on the Pi** (via SSH — see section 3):
+SSH into the Pi (from Windows Terminal: `ssh pi@raspberrypi.local`) and install libgpiod:
 
 ```bash
 sudo apt update
@@ -33,56 +35,80 @@ sudo apt install -y libgpiod-dev gpiod
 Verify:
 
 ```bash
-gpiodetect
-# lists all GPIO chips; gpiochip4 is the RP1 chip driving the 40-pin header
-gpiodetect --version
-# gpiodetect v2.x
+gpiodetect --version   # gpiodetect v2.x
+gpiodetect             # gpiochip4 is the RP1 chip driving the 40-pin header
 ```
 
 ---
 
-## 3. SSH and VS Code Setup (Remote SSH)
+## 3. Set up WSL2
 
-The recommended workflow is to edit on Windows and build/run on the Pi over SSH.
-
-### Connect over SSH
-
-Windows 11 ships with OpenSSH. Open **Windows Terminal** (PowerShell or CMD):
+If you don't already have WSL2:
 
 ```powershell
-ssh user@raspberrypi.local
+# in Windows Terminal (PowerShell or CMD), run as administrator
+wsl --install
 ```
 
-To avoid retyping the address, add an entry to `C:\Users\<you>\.ssh\config`:
+This installs WSL2 with Ubuntu as the default distro. Reboot when prompted. After rebooting, Ubuntu launches and prompts you to set a username and password.
 
+Verify:
+
+```powershell
+wsl --list --verbose
+# Ubuntu   Running   2
 ```
-Host rpi5
-    HostName raspberrypi.local
-    User <username>
-    IdentityFile C:\Users\<you>\.ssh\id_ed25519   # if using key auth
-```
 
-Then just `ssh rpi5`. (PuTTY also works if you prefer a GUI client: https://www.putty.org/)
-
-### VS Code Remote SSH
-
-1. Open VS Code
-2. Go to Extensions (`Ctrl+Shift+X`)
-3. Search **Remote - SSH** and install the extension by Microsoft
-4. Open the command palette (`Ctrl+Shift+P`) → **Remote-SSH: Connect to Host**
-5. Enter `user@raspberrypi.local` (or the `rpi5` alias from your SSH config)
-
-You now have a full VS Code environment running on the Pi.
-
-### What it gives you
-
-- Edit files directly on the Pi from Windows
-- Integrated terminal running on the Pi
-- IntelliSense for C with libgpiod headers
+All remaining steps in this guide run **inside the WSL2 Ubuntu terminal**, not in PowerShell or CMD.
 
 ---
 
-## 4. Project Structure
+## 4. Install the cross-compiler (inside WSL2)
+
+```bash
+sudo apt update
+sudo apt install gcc-aarch64-linux-gnu
+```
+
+Verify:
+
+```bash
+aarch64-linux-gnu-gcc --version
+# aarch64-linux-gnu-gcc x.x.x ...
+```
+
+---
+
+## 5. Set up the sysroot (one-time, inside WSL2)
+
+Copy the Pi's `gpiod.h` header and `libgpiod.a` static library into a sysroot on your WSL2 filesystem. SSH and scp work natively from inside WSL2:
+
+```bash
+mkdir -p ~/rpi5-sysroot/include ~/rpi5-sysroot/lib
+
+scp pi@raspberrypi.local:/usr/include/gpiod.h ~/rpi5-sysroot/include/
+scp pi@raspberrypi.local:/usr/lib/aarch64-linux-gnu/libgpiod.a ~/rpi5-sysroot/lib/
+```
+
+This is a one-time setup — all lessons share the same sysroot.
+
+---
+
+## 6. VS Code Setup
+
+VS Code on Windows has native WSL2 integration — you edit files inside WSL2 and build in the WSL2 terminal, all without leaving VS Code.
+
+1. Install VS Code on Windows: https://code.visualstudio.com/
+2. Install the **WSL** extension by Microsoft
+3. Open the command palette (`Ctrl+Shift+P`) → **WSL: Open Folder in WSL** → navigate to the repo inside your WSL2 filesystem (e.g. `~/from-arduino-to-bare-metal`)
+4. Install the **C/C++** extension by Microsoft for IntelliSense
+5. Point IntelliSense at the sysroot headers: in `.vscode/c_cpp_properties.json`, add `~/rpi5-sysroot/include` to `includePath`
+
+The integrated terminal in VS Code now runs inside WSL2 — `make`, `scp`, and `ssh` all work directly.
+
+---
+
+## 7. Project Structure
 
 Each RPi5 lesson in this repo follows a simple flat structure:
 
@@ -94,20 +120,23 @@ Each RPi5 lesson in this repo follows a simple flat structure:
     └── README.md
 ```
 
-No build system complexity — just a `Makefile` that compiles with `gcc` and links against `libgpiod`.
-
 ### Makefile template
 
 ```makefile
-CC     = gcc
-CFLAGS = -Wall -Wextra
-LIBS   = -lgpiod
+CC      = aarch64-linux-gnu-gcc
+SYSROOT = $(HOME)/rpi5-sysroot
+CFLAGS  = -Wall -Wextra -I$(SYSROOT)/include
+LDFLAGS = -L$(SYSROOT)/lib
+LIBS    = -lgpiod
 
-TARGET = main
-SRC    = main.c
+TARGET  = main
+SRC     = main.c
 
 $(TARGET): $(SRC)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SRC) $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(TARGET) $(SRC) $(LIBS)
+
+deploy: $(TARGET)
+	scp $(TARGET) pi@raspberrypi.local:~/
 
 clean:
 	rm -f $(TARGET)
@@ -115,46 +144,55 @@ clean:
 
 ---
 
-## 5. Build and Run
+## 8. Build, Deploy, and Run
 
-From inside any lesson's `rpi5/` directory **on the Pi** (via SSH or the VS Code remote terminal — not a Windows shell):
+From inside any lesson's `rpi5/` directory in your **WSL2 terminal**:
 
 ```bash
-# build
+# build for aarch64
 make
 
-# run (GPIO access requires root or gpio group membership)
-sudo ./main
+# copy to Pi
+make deploy
 
-# clean
-make clean
+# run on Pi
+ssh pi@raspberrypi.local './main'
 ```
 
-### GPIO group (avoid sudo)
+Or all at once:
+
+```bash
+make && make deploy && ssh pi@raspberrypi.local './main'
+```
+
+### GPIO permissions (on the Pi)
 
 ```bash
 sudo usermod -aG gpio $USER
-# log out and back in
+# log out and back in — then ./main runs without sudo
 ```
 
 ---
 
-## 6. Common Pitfalls
+## 8. Common Pitfalls
 
-**`raspberrypi.local` won't resolve**
-mDNS resolution works on Windows 11, but if it fails, connect by the Pi's IP address instead (find it in your router's client list or run `ip addr show` on the Pi).
+**`gpiod.h` not found during build**
+The sysroot isn't set up or the path is wrong. Confirm `~/rpi5-sysroot/include/gpiod.h` exists inside WSL2.
 
-**`gpiod.h` not found**
-Run `sudo apt install libgpiod-dev` on the Pi — the `-dev` package provides the header (`#include <gpiod.h>`, installed to `/usr/include/gpiod.h`).
+**`cannot find -lgpiod`**
+`libgpiod.a` is missing from the sysroot. Re-run the `scp` from section 5.
+
+**`Exec format error` when running on Pi**
+The binary was compiled for the wrong architecture. Confirm `aarch64-linux-gnu-gcc --version` shows `aarch64` and that the Makefile CC is set correctly.
 
 **Permission denied on `/dev/gpiochip*`**
-Either run with `sudo` or add your user to the `gpio` group (see above).
+Add your user to the `gpio` group on the Pi (see section 8).
 
-**`gpiodetect` shows no chips**
-The Pi isn't running a recent enough kernel. Update with `sudo apt full-upgrade` and reboot.
+**`raspberrypi.local` doesn't resolve from WSL2**
+Try the Pi's IP address instead, or run `ssh pi@raspberrypi.local` from Windows Terminal first to confirm connectivity outside WSL2.
 
 **Finding the right GPIO chip and line**
-Use `gpioinfo` to list all chips and their lines. On RPi5, the 40-pin header is on `gpiochip4` (the RP1 chip).
+On RPi5 the 40-pin header is on `gpiochip4` (the RP1 chip):
 
 ```bash
 gpioinfo gpiochip4

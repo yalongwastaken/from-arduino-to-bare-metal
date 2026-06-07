@@ -1,16 +1,16 @@
-# RPi5 Setup — macOS host (libgpiod)
+# RPi5 Setup — macOS host (libgpiod, cross-compile)
 
-This guide gets you from zero to a working embedded Linux development environment on Raspberry Pi 5, working from a macOS host. Complete this before attempting any RPi5 lesson in this repo.
+This guide gets you from zero to a working cross-compilation workflow for Raspberry Pi 5, building on macOS (Apple Silicon) and deploying to the Pi over SSH. Complete this before attempting any RPi5 lesson in this repo.
 
-> The **RPi5 board** runs **Raspberry Pi OS** (a Linux shell), so the `apt`/`gcc`/`gpiod` commands below all run *on the Pi*. Your **Mac** only needs SSH access — which is built in.
+> **Workflow:** edit and build on your Mac → `scp` binary to Pi → run on Pi. The Pi never needs a compiler installed.
 
 ---
 
-## 1. Install Raspberry Pi OS
+## 1. Flash Raspberry Pi OS (on the Pi)
 
 Flash Raspberry Pi OS (64-bit, Lite or Desktop) to a microSD card using [Raspberry Pi Imager](https://www.raspberrypi.com/software/) (native Apple Silicon build available). Enable SSH and set your hostname/credentials in the imager's **OS Customisation** (gear icon) before flashing.
 
-Verify once booted (over SSH or on the Pi directly):
+Verify once booted:
 
 ```bash
 uname -a
@@ -19,9 +19,9 @@ uname -a
 
 ---
 
-## 2. Install libgpiod
+## 2. Install libgpiod on the Pi
 
-libgpiod is the modern, kernel-supported GPIO library for Linux. It replaces the deprecated sysfs interface and is what production embedded Linux projects use.
+SSH into the Pi and install libgpiod. This gives you the runtime library, development headers, and CLI tools:
 
 ```bash
 sudo apt update
@@ -33,37 +33,61 @@ sudo apt install -y libgpiod-dev gpiod
 Verify:
 
 ```bash
-gpiodetect
-# lists all GPIO chips; gpiochip4 is the RP1 chip driving the 40-pin header
-gpiodetect --version
-# gpiodetect v2.x
+gpiodetect --version   # gpiodetect v2.x
+gpiodetect             # gpiochip4 is the RP1 chip driving the 40-pin header
 ```
 
 ---
 
-## 3. VS Code Setup (Remote SSH)
+## 3. Install the cross-compiler on your Mac
 
-The recommended workflow is to edit on your Mac and build/run on the Pi over SSH. `raspberrypi.local` resolves via Bonjour natively on macOS.
+The `messense/macos-cross-toolchains` tap provides a glibc-based aarch64 Linux toolchain — the correct target for Raspberry Pi OS (Debian/glibc):
 
-### Install
+```bash
+brew tap messense/macos-cross-toolchains
+brew install aarch64-unknown-linux-gnu
+```
 
-1. Open VS Code
-2. Go to Extensions (`Cmd+Shift+X`)
-3. Search **Remote - SSH** and install the extension by Microsoft
-4. Open the command palette (`Cmd+Shift+P`) → **Remote-SSH: Connect to Host**
-5. Enter `user@raspberrypi.local`
+Verify:
 
-You now have a full VS Code environment running on the Pi.
+```bash
+aarch64-unknown-linux-gnu-gcc --version
+# aarch64-unknown-linux-gnu-gcc x.x.x ...
+```
 
-### What it gives you
-
-- Edit files directly on the Pi from your Mac
-- Integrated terminal running on the Pi
-- IntelliSense for C with libgpiod headers
+> **Don't use `aarch64-elf-gcc`** from Homebrew core — that's a bare-metal toolchain (no OS, no libc) and won't produce binaries that run on Linux.
 
 ---
 
-## 4. Project Structure
+## 4. Set up the sysroot (one-time)
+
+The cross-compiler needs the Pi's `gpiod.h` header and `libgpiod.a` static library to resolve symbols at build time. Copy them from the Pi to a sysroot directory on your Mac. `raspberrypi.local` resolves via Bonjour natively:
+
+```bash
+mkdir -p ~/rpi5-sysroot/include ~/rpi5-sysroot/lib
+
+scp pi@raspberrypi.local:/usr/include/gpiod.h ~/rpi5-sysroot/include/
+scp pi@raspberrypi.local:/usr/lib/aarch64-linux-gnu/libgpiod.a ~/rpi5-sysroot/lib/
+```
+
+This is a one-time setup — all lessons share the same sysroot.
+
+---
+
+## 5. VS Code Setup
+
+Edit files locally in VS Code as you would any C project. Use the integrated terminal for building and deploying.
+
+1. Open VS Code
+2. Open the repo folder locally (**File → Open Folder**)
+3. Install the **C/C++** extension by Microsoft for IntelliSense
+4. Point IntelliSense at the sysroot headers: in `.vscode/c_cpp_properties.json`, add `~/rpi5-sysroot/include` to `includePath`
+
+Use a second terminal pane (or a VS Code task) for `ssh pi@raspberrypi.local` when you need to run or monitor output on the Pi.
+
+---
+
+## 6. Project Structure
 
 Each RPi5 lesson in this repo follows a simple flat structure:
 
@@ -75,20 +99,23 @@ Each RPi5 lesson in this repo follows a simple flat structure:
     └── README.md
 ```
 
-No build system complexity — just a `Makefile` that compiles with `gcc` and links against `libgpiod`.
-
 ### Makefile template
 
 ```makefile
-CC     = gcc
-CFLAGS = -Wall -Wextra
-LIBS   = -lgpiod
+CC      = aarch64-unknown-linux-gnu-gcc
+SYSROOT = $(HOME)/rpi5-sysroot
+CFLAGS  = -Wall -Wextra -I$(SYSROOT)/include
+LDFLAGS = -L$(SYSROOT)/lib
+LIBS    = -lgpiod
 
-TARGET = main
-SRC    = main.c
+TARGET  = main
+SRC     = main.c
 
 $(TARGET): $(SRC)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SRC) $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(TARGET) $(SRC) $(LIBS)
+
+deploy: $(TARGET)
+	scp $(TARGET) pi@raspberrypi.local:~/
 
 clean:
 	rm -f $(TARGET)
@@ -96,43 +123,52 @@ clean:
 
 ---
 
-## 5. Build and Run
+## 7. Build, Deploy, and Run
 
-From inside any lesson's `rpi5/` directory **on the Pi** (via SSH or the VS Code remote terminal):
+From inside any lesson's `rpi5/` directory on your **Mac**:
 
 ```bash
-# build
+# build for aarch64
 make
 
-# run (GPIO access requires root or gpio group membership)
-sudo ./main
+# copy to Pi
+make deploy
 
-# clean
-make clean
+# run on Pi
+ssh pi@raspberrypi.local './main'
 ```
 
-### GPIO group (avoid sudo)
+Or all at once:
+
+```bash
+make && make deploy && ssh pi@raspberrypi.local './main'
+```
+
+### GPIO permissions (on the Pi)
 
 ```bash
 sudo usermod -aG gpio $USER
-# log out and back in
+# log out and back in — then ./main runs without sudo
 ```
 
 ---
 
-## 6. Common Pitfalls
+## 8. Common Pitfalls
 
-**`gpiod.h` not found**
-Run `sudo apt install libgpiod-dev` — the `-dev` package provides the header (`#include <gpiod.h>`, installed to `/usr/include/gpiod.h`).
+**`gpiod.h` not found during build**
+The sysroot isn't set up or the path is wrong. Confirm `~/rpi5-sysroot/include/gpiod.h` exists.
+
+**`cannot find -lgpiod`**
+`libgpiod.a` is missing from the sysroot. Re-run the `scp` from section 4.
+
+**`Exec format error` when running on Pi**
+The binary was compiled for the wrong architecture. Confirm you're using `aarch64-unknown-linux-gnu-gcc` (not `aarch64-elf-gcc`) and that the Makefile CC is set correctly.
 
 **Permission denied on `/dev/gpiochip*`**
-Either run with `sudo` or add your user to the `gpio` group (see above).
-
-**`gpiodetect` shows no chips**
-The Pi isn't running a recent enough kernel. Update with `sudo apt full-upgrade` and reboot.
+Add your user to the `gpio` group on the Pi (see section 7).
 
 **Finding the right GPIO chip and line**
-Use `gpioinfo` to list all chips and their lines. On RPi5, the 40-pin header is on `gpiochip4` (the RP1 chip).
+On RPi5 the 40-pin header is on `gpiochip4` (the RP1 chip):
 
 ```bash
 gpioinfo gpiochip4
