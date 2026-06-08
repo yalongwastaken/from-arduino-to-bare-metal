@@ -3,6 +3,9 @@
 **/sdkconfig
 **/sdkconfig.old
 
+# C build artifacts
+**/work/
+
 # Python
 __pycache__/
 *.pyc

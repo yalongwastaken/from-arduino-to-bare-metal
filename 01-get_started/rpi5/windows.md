@@ -129,7 +129,7 @@ CFLAGS  = -Wall -Wextra -I$(SYSROOT)/include
 LDFLAGS = -L$(SYSROOT)/lib
 LIBS    = -lgpiod
 
-TARGET  = main
+TARGET  = work/main
 SRC     = main.c
 
 $(TARGET): $(SRC)
