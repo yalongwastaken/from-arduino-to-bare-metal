@@ -52,13 +52,13 @@ typedef struct {
 
 /**
  * @brief Initialize the LCD display.
- * @param[in]  dev   Pre-configured I2C device handle (address 0x27 set by caller)
+ * @param[in]  bus   I2C bus handle
  * @param[in]  cols  Number of columns (typically 16)
  * @param[in]  rows  Number of rows (typically 2)
  * @param[out] lcd   Pointer to LCD handle to populate
  * @return ESP_OK on success, or an esp_err_t error code on failure
  */
-esp_err_t lcd_init(i2c_master_dev_handle_t dev, uint8_t cols, uint8_t rows, lcd_handle_t *lcd);
+esp_err_t lcd_init(i2c_master_bus_handle_t bus, uint8_t cols, uint8_t rows, lcd_handle_t *lcd);
 
 /**
  * @brief Clear the display and return cursor to home position.
@@ -99,3 +99,10 @@ esp_err_t lcd_print(lcd_handle_t *lcd, const char *str);
  * @return ESP_OK on success, or an esp_err_t error code on failure
  */
 esp_err_t lcd_print_int(lcd_handle_t *lcd, int value);
+
+/**
+ * @brief Deinitializes the LCD unit.
+ * @param[in] lcd    Pointer to initialized LCD handle
+ * @return ESP_OK on success, or an esp_err_t error code on failure
+ */
+esp_err_t lcd_deinit(lcd_handle_t *lcd);

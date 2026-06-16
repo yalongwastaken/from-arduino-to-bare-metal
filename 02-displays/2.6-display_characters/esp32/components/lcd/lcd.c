@@ -120,7 +120,7 @@ static esp_err_t lcd_send_data(lcd_handle_t *lcd, uint8_t data) {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-esp_err_t lcd_init(i2c_master_dev_handle_t dev, uint8_t cols, uint8_t rows, lcd_handle_t *lcd) {
+esp_err_t lcd_init(i2c_master_bus_handle_t bus, uint8_t cols, uint8_t rows, lcd_handle_t *lcd) {
     esp_err_t ret;
 
     // sanity check
@@ -129,8 +129,19 @@ esp_err_t lcd_init(i2c_master_dev_handle_t dev, uint8_t cols, uint8_t rows, lcd_
         return ESP_ERR_INVALID_ARG;
     }
 
+    // register lcd as a device on the bus
+    i2c_device_config_t lcd_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address  = 0x27,
+        .scl_speed_hz    = 100000,
+    };
+    ret = i2c_master_bus_add_device(bus, &lcd_cfg, &lcd->dev);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "failed to add lcd device");
+        return ret;
+    }
+
     // populate handle
-    lcd->dev = dev;
     lcd->cols = cols;
     lcd->rows = rows;
     lcd->backlight_state = LCD_BACKLIGHT;
@@ -277,4 +288,27 @@ esp_err_t lcd_print_int(lcd_handle_t *lcd, int value) {
     snprintf(buf, sizeof(buf), "%d", value);
 
     return lcd_print(lcd, buf);
+}
+
+esp_err_t lcd_deinit(lcd_handle_t *lcd) {
+    if (lcd == NULL) {
+        ESP_LOGE(TAG, "null structure pointer");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // clean display state before releasing hardware
+    lcd_clear(lcd);
+    lcd_backlight(lcd, false);
+
+    // deregister device from the bus
+    esp_err_t ret = i2c_master_bus_rm_device(lcd->dev);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "failed to remove I2C device");
+        return ret;
+    }
+
+    lcd->dev = NULL;
+
+    ESP_LOGD(TAG, "deinitialized");
+    return ESP_OK;
 }
