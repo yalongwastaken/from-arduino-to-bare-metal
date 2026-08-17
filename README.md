@@ -1,8 +1,10 @@
-# from-arduino-to-bare-metal
+# From Arduino to Bare Metal
 
 Direct ports of the [SunFounder ESP32 Starter Kit](https://docs.sunfounder.com/projects/esp32-starter-kit/en/latest/) Arduino tutorials to ESP32, STM32, and Raspberry Pi 5.
 
 No abstractions, no libraries — just the same circuits, rewritten against the hardware.
+
+> **Status: in progress.**
 
 ## Why
 
@@ -14,7 +16,7 @@ The SunFounder tutorials are a great introduction to ESP32 with Arduino. This re
 
 If you're comfortable with the Arduino version of a lesson and want to see how it maps to the real framework, this is for you.
 
-## Structure
+## Repository Structure
 
 Lessons mirror the SunFounder tutorial structure exactly:
 
@@ -41,7 +43,7 @@ from-arduino-to-bare-metal/
 
 ESP32 translations come first. STM32 and RPi5 folders are added to each lesson after all ESP32 lessons are complete.
 
-## Prerequisites
+## Requirements
 
 Environment setup and installation for all three platforms — covering **macOS** (Apple Silicon), **Windows 11**, and **Ubuntu 26.04 Linux** hosts — lives in [`01-get_started/`](01-get_started/):
 
@@ -51,6 +53,8 @@ Environment setup and installation for all three platforms — covering **macOS*
 
 You'll also need the matching hardware: an ESP32 board (SunFounder ESP32 Starter Kit or equivalent), a Nucleo-F446RE, and/or a Raspberry Pi 5.
 
-## Status
+## Author
 
-Active. ESP32 translations in progress, working through the SunFounder lesson list in order.
+**Anthony Yalong**
+- Email: yalong.anthony123@gmail.com
+- GitHub: [@yalongwastaken](https://github.com/yalongwastaken)
