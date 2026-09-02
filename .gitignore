@@ -16,3 +16,6 @@ __pycache__/
 .idea/
 *.swp
 .env
+
+# personal — this repo is written for a reader, not for me
+CLAUDE.md
