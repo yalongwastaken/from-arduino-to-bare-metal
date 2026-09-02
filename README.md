@@ -22,26 +22,20 @@ Lessons mirror the SunFounder tutorial structure exactly:
 
 ```
 from-arduino-to-bare-metal/
-├── 01-get-started/
-│   ├── esp32/             — ESP-IDF v5.x setup (macOS / Windows / Linux)
-│   ├── stm32/             — STM32CubeIDE setup (macOS / Windows / Linux)
-│   └── rpi5/              — Raspberry Pi OS + libgpiod setup (+ SSH from any host)
-├── 02-displays/
-│   ├── 2.1-hello_led/
-│   │   ├── esp32/         — ESP-IDF v5.x implementation
-│   │   ├── stm32/         — STM32CubeIDE implementation
-│   │   ├── rpi5/          — libgpiod implementation
-│   │   └── README.md      — lesson overview, SunFounder link
-│   └── README.md          — section overview
-├── 03-sounds/
-├── 04-actuators/
-├── 05-sensors/
-├── 06-funny-projects/
-├── 07-bluetooth-sd-camera/
-└── 08-iot/
+├── 01-get-started/            — environment setup, one file per host OS
+│   ├── esp32/                 — ESP-IDF v5.x
+│   ├── stm32/                 — STM32CubeIDE
+│   └── rpi5/                  — Raspberry Pi OS + libgpiod
+└── NN-section-name/           — one directory per SunFounder section
+    ├── N.M-lesson-name/       — one directory per lesson
+    │   ├── esp32/             — ESP-IDF v5.x implementation
+    │   ├── stm32/             — STM32CubeIDE implementation
+    │   ├── rpi5/              — libgpiod implementation
+    │   └── README.md          — lesson overview, SunFounder link
+    └── README.md              — section overview
 ```
 
-ESP32 translations come first. STM32 and RPi5 folders are added to each lesson after all ESP32 lessons are complete.
+Each platform is a separate pass — ESP32 first, then STM32, then RPi5 — and a lesson directory gains a platform folder only once that pass reaches it. The full lesson map lives in this repo's [milestones](../../milestones).
 
 ## Requirements
 
