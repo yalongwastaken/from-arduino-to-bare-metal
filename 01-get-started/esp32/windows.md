@@ -65,7 +65,7 @@ Espressif provides an official ESP-IDF extension for VS Code that wraps `idf.py`
 Each lesson in this repo follows the standard ESP-IDF project layout:
 
 ```
-2.1-hello_led/
+2.1-hello-led/
 └── esp32/
     ├── CMakeLists.txt          — top-level build file, registers the project
     ├── main/

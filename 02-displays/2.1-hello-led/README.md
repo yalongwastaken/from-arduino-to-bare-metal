@@ -12,7 +12,7 @@ SunFounder tutorial: [2.1 Hello, LED!](https://docs.sunfounder.com/projects/esp3
 ## Contents
 
 ```
-2.1-hello_led/
+2.1-hello-led/
 ├── esp32/
 │   ├── main/
 │   │   └── main.c

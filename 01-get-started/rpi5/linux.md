@@ -70,7 +70,7 @@ You now have a full VS Code environment running on the Pi.
 Each RPi5 lesson in this repo follows a simple flat structure:
 
 ```
-2.1-hello_led/
+2.1-hello-led/
 └── rpi5/
     ├── Makefile
     ├── main.c
